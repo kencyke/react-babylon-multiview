@@ -30,11 +30,6 @@ function onSceneMount(e: SceneEventArgs) {
   scene.activeCameras.push(camera1);
   scene.activeCameras.push(camera2);
   
-	var light1 = new HemisphericLight("light1", new Vector3(1, 0.5, 0), scene);
-  light1.intensity = 0.7;
-  var light2 = new HemisphericLight("light2", new Vector3(-1, -0.5, 0), scene);
-  light2.intensity = 0.8;
-  
   var faceColors = [];
 	faceColors[0] = Color4.FromColor3(Color3.Blue());
 	faceColors[1] = Color4.FromColor3(Color3.White());
@@ -70,6 +65,8 @@ const App: React.FC = () => {
     <div>
       <EngineWithContext antialias={false} adaptToDeviceRatio={true} canvasId="sample-canvas" width={1280} height={720}>
         <Scene onSceneMount={onSceneMount}>
+          <hemisphericLight name="light1" intensity={0.7} direction={new Vector3(1, 0.5, 0)} />
+          <hemisphericLight name="light2" intensity={0.8} direction={new Vector3(-1, 0.5, 0)} />
           <PointsCloud name={"sample-pcd"} scale={3} points={points} updatable={true} />
         </Scene>
       </EngineWithContext>
