@@ -11,8 +11,6 @@ import {
 import PointsCloud, { CloudPoint } from './components/PointsCloud';
 import ColoredBox from './components/ColoredBox';
 
-const EngineWithContext = withBabylonJS(Engine);
-
 function onSceneMount(e: SceneEventArgs) {
   const { canvas, scene } = e
 
@@ -36,6 +34,8 @@ function onSceneMount(e: SceneEventArgs) {
 }
 
 const App: React.FC = () => {
+  const EngineWithContext = withBabylonJS(Engine);
+  
   const nbPoints = 30000;
   const points = new Array<CloudPoint>();
   for (let i = 0; i < nbPoints; i ++) {
