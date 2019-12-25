@@ -8,8 +8,10 @@ import {
   MeshBuilder,
   Color3,
   Color4,
-  StandardMaterial 
+  StandardMaterial,
+  Scalar
 } from '@babylonjs/core';
+import PointsCloud, { CloudPoint } from './components/PointsCloud';
 
 const EngineWithContext = withBabylonJS(Engine);
 
@@ -29,8 +31,8 @@ function onSceneMount(e: SceneEventArgs) {
   scene.activeCameras.push(camera2);
   
 	var light1 = new HemisphericLight("light1", new Vector3(1, 0.5, 0), scene);
-	light1.intensity = 0.7;
-	var light2 = new HemisphericLight("light2", new Vector3(-1, -0.5, 0), scene);
+  light1.intensity = 0.7;
+  var light2 = new HemisphericLight("light2", new Vector3(-1, -0.5, 0), scene);
   light2.intensity = 0.8;
   
   var faceColors = [];
@@ -52,10 +54,23 @@ function onSceneMount(e: SceneEventArgs) {
 }
 
 const App: React.FC = () => {
+  const nbPoints = 30000;
+  const points = new Array<CloudPoint>();
+  for (let i = 0; i < nbPoints; i ++) {
+    const x = Scalar.RandomRange(-100, 100);
+    const y = Scalar.RandomRange(-100, 100);
+    const z = Scalar.RandomRange(-100, 100);
+    const r = Math.random();
+    const g = Math.random();
+    const b = Math.random();
+    const a = Scalar.RandomRange(0, 1);
+    points.push(new CloudPoint(i, new Color4(r, g, b, a), new Vector3(x, y, z)));
+  }
   return (
     <div>
       <EngineWithContext antialias={false} adaptToDeviceRatio={true} canvasId="sample-canvas" width={1280} height={720}>
         <Scene onSceneMount={onSceneMount}>
+          <PointsCloud name={"sample-pcd"} scale={3} points={points} updatable={true} />
         </Scene>
       </EngineWithContext>
     </div>
