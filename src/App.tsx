@@ -4,14 +4,12 @@ import {
   Vector3,
   ArcRotateCamera,
   Viewport,
-  HemisphericLight,
-  MeshBuilder,
   Color3,
   Color4,
-  StandardMaterial,
   Scalar
 } from '@babylonjs/core';
 import PointsCloud, { CloudPoint } from './components/PointsCloud';
+import ColoredBox from './components/ColoredBox';
 
 const EngineWithContext = withBabylonJS(Engine);
 
@@ -29,17 +27,6 @@ function onSceneMount(e: SceneEventArgs) {
     
   scene.activeCameras.push(camera1);
   scene.activeCameras.push(camera2);
-  
-  var faceColors = [];
-	faceColors[0] = Color4.FromColor3(Color3.Blue());
-	faceColors[1] = Color4.FromColor3(Color3.White());
-	faceColors[2] = Color4.FromColor3(Color3.Red());
-	faceColors[3] = Color4.FromColor3(Color3.Black());
-	faceColors[4] = Color4.FromColor3(Color3.Green());
-	faceColors[5] = Color4.FromColor3(Color3.Yellow());
- 
-	var box = MeshBuilder.CreateBox("box", { faceColors : faceColors, size : 2 }, scene);
-  box.material = new StandardMaterial("", scene);
   
   scene.getEngine().runRenderLoop(() => {
       if (scene) {
@@ -61,6 +48,15 @@ const App: React.FC = () => {
     const a = Scalar.RandomRange(0, 1);
     points.push(new CloudPoint(i, new Color4(r, g, b, a), new Vector3(x, y, z)));
   }
+
+  const boxSize = 2;
+  const color0 = Color4.FromColor3(Color3.Blue());
+	const color1 = Color4.FromColor3(Color3.White());
+	const color2 = Color4.FromColor3(Color3.Red());
+	const color3 = Color4.FromColor3(Color3.Black());
+	const color4 = Color4.FromColor3(Color3.Green());
+	const color5 = Color4.FromColor3(Color3.Yellow());
+  
   return (
     <div>
       <EngineWithContext antialias={false} adaptToDeviceRatio={true} canvasId="sample-canvas" width={1280} height={720}>
@@ -68,6 +64,7 @@ const App: React.FC = () => {
           <hemisphericLight name="light1" intensity={0.7} direction={new Vector3(1, 0.5, 0)} />
           <hemisphericLight name="light2" intensity={0.8} direction={new Vector3(-1, 0.5, 0)} />
           <PointsCloud name={"sample-pcd"} scale={3} points={points} updatable={true} />
+          <ColoredBox name={"sample-box"} size={boxSize} color0={color0} color1={color1} color2={color2} color3={color3} color4={color4} color5={color5} />
         </Scene>
       </EngineWithContext>
     </div>
