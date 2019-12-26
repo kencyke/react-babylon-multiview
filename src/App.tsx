@@ -6,10 +6,105 @@ import {
   Viewport,
   Color3,
   Color4,
-  Scalar
+  Scalar,
+  PointerInfo,
+  Scene as BabylonJSScene,
+  Nullable,
+  AbstractMesh,
+  Camera,
 } from '@babylonjs/core';
 import PointsCloud, { CloudPoint } from './components/PointsCloud';
-import ColoredBox from './components/ColoredBox';
+
+var startingPoint: Nullable<Vector3>
+var currentMesh: Nullable<AbstractMesh>
+var cameraToPick: Camera | undefined
+
+function setCameraToPick(scene: BabylonJSScene) {
+  cameraToPick = undefined;
+
+  const x = scene.pointerX;
+  const y = scene.pointerY;
+  const renderWidth = scene.getEngine().getRenderWidth(true);
+  const renderHeight = scene.getEngine().getRenderHeight(true);
+  scene.activeCameras.forEach(c => {
+    const y1 = renderHeight - y;
+    const absoluteViewport = c.viewport.toGlobal(renderWidth, renderHeight);
+    console.log("renderWidth: %d, renderHight: %d", renderWidth, renderHeight);
+    console.log("mouseX: %d, mouseY: %d", x, y);
+    console.log("originX: %d, originY: %d, width: %d, height: %d", absoluteViewport.x, absoluteViewport.y, absoluteViewport.width, absoluteViewport.height);
+    if (x > absoluteViewport.x && y1 > absoluteViewport.y) {
+      if (x < absoluteViewport.x + absoluteViewport.width && y1 < absoluteViewport.y + absoluteViewport.height) {
+        var pickinfo = scene.pick(x, y, function (mesh) { return mesh.name !== 'ground' }, undefined, c);
+        if (pickinfo && pickinfo.hit) {
+          cameraToPick = c
+        }
+      }
+    }
+  })
+}
+
+function getGroundPosition(evt: PointerInfo, scene: BabylonJSScene) {
+  // Use a predicate to get position on the ground
+  var pickinfo = scene.pick(scene.pointerX, scene.pointerY, function (mesh) { return mesh.name === 'ground' }, undefined, cameraToPick)
+  if (pickinfo && pickinfo.hit) {
+    return pickinfo.pickedPoint
+  }
+
+  return null
+}
+
+function onPointerDown(evt: PointerInfo, scene: BabylonJSScene) {
+  if (evt.event.button !==0) {
+    return
+  }
+
+  setCameraToPick(scene)
+
+  // check if we are under a mesh
+  if (cameraToPick) {
+    var pickInfo = scene.pick(scene.pointerX, scene.pointerY, function (mesh) { return mesh.name !== 'ground' }, undefined, cameraToPick);
+    if (pickInfo && pickInfo.hit) {
+      currentMesh = pickInfo.pickedMesh;
+      startingPoint = getGroundPosition(evt, scene);
+      
+      const canvas = scene.getEngine().getRenderingCanvas();
+      if (startingPoint && canvas) { // we need to disconnect camera from canvas
+        setTimeout(function () {
+          scene.activeCameras.forEach(c => c.detachControl(canvas))
+        }, 0)
+      }
+    }
+  }
+}
+
+function onPointerUp(evt: PointerInfo, scene: BabylonJSScene) {
+  const canvas = scene.getEngine().getRenderingCanvas()
+
+  if (startingPoint && canvas) {
+    scene.activeCameras.forEach(c => c.attachControl(canvas, true))
+    startingPoint = null
+    cameraToPick = undefined
+  }
+}
+
+function onPointerMove(evt: PointerInfo, scene: BabylonJSScene) {
+  if (!startingPoint) {
+    return
+  }
+
+  var current = getGroundPosition(evt, scene)
+
+  if (!current) {
+    return
+  }
+
+  var diff = current.subtract(startingPoint)
+  if (currentMesh) {
+    currentMesh.position.addInPlace(diff)
+  }
+
+  startingPoint = current
+}
 
 function onSceneMount(e: SceneEventArgs) {
   const { canvas, scene } = e
@@ -35,7 +130,7 @@ function onSceneMount(e: SceneEventArgs) {
 
 const App: React.FC = () => {
   const EngineWithContext = withBabylonJS(Engine);
-  
+
   const nbPoints = 30000;
   const points = new Array<CloudPoint>();
   for (let i = 0; i < nbPoints; i ++) {
@@ -50,21 +145,29 @@ const App: React.FC = () => {
   }
 
   const boxSize = 2;
-  const color0 = Color4.FromColor3(Color3.Blue());
-	const color1 = Color4.FromColor3(Color3.White());
-	const color2 = Color4.FromColor3(Color3.Red());
-	const color3 = Color4.FromColor3(Color3.Black());
-	const color4 = Color4.FromColor3(Color3.Green());
-	const color5 = Color4.FromColor3(Color3.Yellow());
+  const faceColors = [
+    Color4.FromColor3(Color3.Blue()),
+    Color4.FromColor3(Color3.White()),
+    Color4.FromColor3(Color3.Red()),
+    Color4.FromColor3(Color3.Black()),
+    Color4.FromColor3(Color3.Green()),
+    Color4.FromColor3(Color3.Yellow())
+  ]
   
   return (
     <div>
-      <EngineWithContext antialias={false} adaptToDeviceRatio={true} canvasId="sample-canvas" width={1280} height={720}>
-        <Scene onSceneMount={onSceneMount}>
+      <EngineWithContext antialias={false} adaptToDeviceRatio={true} canvasId="sample-canvas" engineOptions={{ stencil: true }} width={1280} height={720}>
+        <Scene onSceneMount={onSceneMount} onScenePointerDown={onPointerDown} onScenePointerUp={onPointerUp} onScenePointerMove={onPointerMove}
+          sceneOptions={{ useMaterialMeshMap: false }}>
           <hemisphericLight name="light1" intensity={0.7} direction={new Vector3(1, 0.5, 0)} />
           <hemisphericLight name="light2" intensity={0.8} direction={new Vector3(-1, 0.5, 0)} />
           <PointsCloud name={"sample-pcd"} scale={3} points={points} updatable={true} />
-          <ColoredBox name={"sample-box"} size={boxSize} color0={color0} color1={color1} color2={color2} color3={color3} color4={color4} color5={color5} />
+          <box name={"colored-box"} size={boxSize} position={Vector3.Zero()} faceColors={faceColors}>
+            <standardMaterial name={"box-material"} />
+          </box>
+          <ground name='ground' width={200} height={200} subdivisions={1}>
+            <standardMaterial name='groundMat' specularColor={Color3.Black()} />
+          </ground>
         </Scene>
       </EngineWithContext>
     </div>
