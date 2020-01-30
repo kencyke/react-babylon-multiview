@@ -1,5 +1,5 @@
-import React from 'react';
-import { Engine, Scene, SceneEventArgs, withBabylonJS } from 'react-babylonjs'
+import React, { useState, useEffect } from 'react';
+import { Engine, Scene, SceneEventArgs, withBabylonJS, useBabylonScene } from 'react-babylonjs'
 import { 
   Vector3,
   ArcRotateCamera,
@@ -130,6 +130,7 @@ function onSceneMount(e: SceneEventArgs) {
 
 const App: React.FC = () => {
   const EngineWithContext = withBabylonJS(Engine);
+  const [count, setCount] = useState(0)
 
   const nbPoints = 30000;
   const points = new Array<CloudPoint>();
@@ -141,7 +142,7 @@ const App: React.FC = () => {
     const g = Math.random();
     const b = Math.random();
     const a = Scalar.RandomRange(0, 1);
-    points.push(new CloudPoint(i, new Color4(r, g, b, a), new Vector3(x, y, z)));
+    points.push(new CloudPoint(i, new Color4(r, g, b, a), new Vector3(x + count, y, z)));
   }
 
   const boxSize = 2;
@@ -162,14 +163,14 @@ const App: React.FC = () => {
           <hemisphericLight name="light1" intensity={0.7} direction={new Vector3(1, 0.5, 0)} />
           <hemisphericLight name="light2" intensity={0.8} direction={new Vector3(-1, 0.5, 0)} />
           <PointsCloud name={"sample-pcd"} scale={3} points={points} updatable={true} />
-          <box name={"colored-box"} size={boxSize} position={Vector3.Zero()} faceColors={faceColors}>
-            <standardMaterial name={"box-material"} />
-          </box>
+          <box name={"colored-box"} size={boxSize} position={Vector3.Zero()} faceColors={faceColors} />
           <ground name='ground' width={200} height={200} subdivisions={1}>
             <standardMaterial name='groundMat' specularColor={Color3.Black()} />
           </ground>
         </Scene>
       </EngineWithContext>
+      <br/>
+      <button onClick={() => setCount(count => count + 100)}>Points cloud moves 100 along X-axis</button>
     </div>
     
   );
